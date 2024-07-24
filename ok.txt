@@ -1,252 +1,220 @@
-import matplotlib.pyplot as plt 
-
-hours_spent_studying = [10, 9, 2, 15, 10, 16, 11, 16] 
-final_exam_scores = [80, 75, 30, 90, 85, 95, 85, 90] 
- 
-plt.figure(figsize=(8, 6)) 
-plt.plot(hours_spent_studying, final_exam_scores, 'r*-', markersize=10) 
-plt.title('Effect of Hours Spent Studying on Final Exam Score') 
-plt.xlabel('Number of Hours Spent Studying') 
-plt.ylabel('Score in the Final Exam (0-100)') 
-plt.grid(True) 
-plt.show() 
--------------------------------------
-import pandas as pd 
-import matplotlib.pyplot as plt 
- 
-
-mtcars = pd.read_csv("/content/sample_data/mtcars.csv") 
- 
-plt.figure(figsize=(8, 6)) 
-plt.hist(mtcars['mpg'], bins=10, color='skyblue', edgecolor='black') 
-plt.title('Frequency Distribution of Miles per Gallon (mpg)') 
-plt.xlabel('Miles per Gallon (mpg)') 
-plt.ylabel('Frequency') 
-plt.grid(True) 
-plt.show() 
-----------------------------------------------
-import pandas as pd
 import numpy as np
-
-url = "/content/sample_data/BL-Flickr-Images-Book.csv"
-df = pd.read_csv(url)
-
-print("Original Data:")
-print(df.head())
-
-irrelevant_columns = [
-    'Edition Statement', 'Corporate Author', 'Corporate Contributors',
-    'Former owner', 'Engraver', 'Contributors', 'Issuance type', 'Shelfmarks'
-]
-df.drop(columns=irrelevant_columns, inplace=True)
-
-print("\nData after Dropping Irrelevant Columns:")
-print(df.head())
-
-df.set_index('Identifier', inplace=True)
-
-print("\nData after Setting New Index:")
-print(df.head())
-
-df['Date of Publication'] = df['Date of Publication'].str.extract(r'(\d{4})').astype(float)
-
-print("\nData after Tidying 'Date of Publication':")
-print(df.head())
-
-df['Place of Publication'] = np.where(df['Place of Publication'].str.contains('London'), 'London', df['Place of Publication'])
-df['Place of Publication'] = np.where(df['Place of Publication'].str.contains('Oxford'), 'Oxford', df['Place of Publication'])
-
-print("\nData after Cleaning 'Place of Publication':")
-print(df.head())
---------------------------------------------------------------
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
 from sklearn.datasets import load_iris
-
-iris = load_iris()
-X = iris.data
-y = iris.target
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-model = LogisticRegression(C=1e4, max_iter=200, random_state=42)
-model.fit(X_train, y_train)
-
-y_pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
-
-print(f'Classification Accuracy: {accuracy:.4f}')
-----------------------------------------------------------------
-import numpy as np
-import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
-from sklearn.datasets import load_iris
+from sklearn.metrics import accuracy_score, classification_report
 
 # Load the Iris dataset
 iris = load_iris()
 X = iris.data
 y = iris.target
-
-# Split the dataset into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train SVM models with RBF kernel, gamma=0.5, and varying C values
-C_values = [0.01, 1, 10]
-best_accuracy = 0
-best_model = None
-best_C = None
-support_vectors_count = 0
+# Standardize features by removing the mean and scaling to unit variance
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
-for C in C_values:
-    model = SVC(kernel='rbf', gamma=0.5, C=C)
-    model.fit(X_train, y_train)
 
-    # Evaluate the model
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    num_support_vectors = len(model.support_)
+svm_classifier = SVC(kernel='linear', C=1.0, random_state=42)
+svm_classifier.fit(X_train, y_train)
 
-    print(f'C={C}, Accuracy={accuracy:.4f}, Number of Support Vectors={num_support_vectors}')
-
-    # Track the best model
-    if accuracy > best_accuracy:
-        best_accuracy = accuracy
-        best_model = model
-        best_C = C
-        support_vectors_count = num_support_vectors
-
-print(f'\nBest Model: C={best_C}, Best Accuracy={best_accuracy:.4f}, Number of Support Vectors={support_vectors_count}')
------------------------------------------------------------------------------------------------------------------------------
-import pandas as pd
+# Calculate accuracy
+y_pred = svm_classifier.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+-------------------------------------------------------------------------------------------------------
 import numpy as np
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
+import matplotlib.pyplot as plt
+from sklearn.metrics import silhouette_score
 
-# Step 1: Calculate Entropy
-def entropy(target_col):
-    elements, counts = np.unique(target_col, return_counts=True)
-    entropy_value = np.sum([-counts[i] / np.sum(counts) * np.log2(counts[i] / np.sum(counts)) for i in range(len(elements))])
-    return entropy_value
+# Generate random data for testing
+np.random.seed(0)  # for reproducibility
+data = np.random.rand(100, 2)
+df = pd.DataFrame(data, columns=['X', 'Y'])
 
-# Step 2: Calculate Information Gain
-def info_gain(data, split_attribute_name, target_name="Profitable"):
-    total_entropy = entropy(data[target_name])
-    vals, counts = np.unique(data[split_attribute_name], return_counts=True)
-    
-    weighted_entropy = np.sum([(counts[i] / np.sum(counts)) * entropy(data.where(data[split_attribute_name] == vals[i]).dropna()[target_name]) for i in range(len(vals))])
-    information_gain = total_entropy - weighted_entropy
-    return information_gain
+# Save DataFrame to CSV file
+df.to_csv('test_data.csv', index=False)
 
-# Step 3: ID3 Algorithm to build the tree
-def ID3(data, original_data, features, target_attribute_name="Profitable", parent_node_class=None):
-    if len(np.unique(data[target_attribute_name])) <= 1:
-        return np.unique(data[target_attribute_name])[0]
-    elif len(data) == 0:
-        return np.unique(original_data[target_attribute_name])[np.argmax(np.unique(original_data[target_attribute_name], return_counts=True)[1])]
-    elif len(features) == 0:
-        return parent_node_class
-    else:
-        parent_node_class = np.unique(data[target_attribute_name])[np.argmax(np.unique(data[target_attribute_name], return_counts=True)[1])]
-        item_values = [info_gain(data, feature, target_attribute_name) for feature in features]
-        best_feature_index = np.argmax(item_values)
-        best_feature = features[best_feature_index]
+print("CSV file 'test_data.csv' has been generated successfully.")
+data = pd.read_csv('test_data.csv')
+X = data.values
+
+
+
+
+# K-means clustering
+k = KMeans(3)
+k.fit(X)
+klabel = k.labels_
+kcenter = k.cluster_centers_
+
+# EM clustering
+em = GaussianMixture(3)
+em.fit(X)
+elabel = em.predict(X)
+ecenter = em.means_
+
+# Compare clustering results
+print("K-means labels:")
+print(klabel)
+print("EM labels:")
+print(elabel)
+
+# Visualize clustering results
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.scatter(X[:, 0], X[:, 1], c=klabel, cmap='viridis')
+plt.scatter(kcenter[:, 0], kcenter[:, 1], marker='*', s=300, c='r')
+plt.title('K-means Clustering')
+
+plt.subplot(1, 2, 2)
+plt.scatter(X[:, 0], X[:, 1], c=elabel, cmap='viridis')
+plt.scatter(ecenter[:, 0], ecenter[:, 1], marker='*', s=300, c='r')
+plt.title('EM Clustering')
+
+plt.show()
+
+# Silhouette Score for K-means
+ksil = silhouette_score(X, klabel)
+print(f"K-means Silhouette Score: {ksil}")
+
+# Silhouette Score for EM (GMM)
+esil = silhouette_score(X, elabel)
+print(f"EM (GMM) Silhouette Score: {esil}")
+------------------------------------------------------------------------------------------------
+import pandas as pd
+from pgmpy.models import BayesianNetwork
+from pgmpy.estimators import MaximumLikelihoodEstimator
+from pgmpy.inference import VariableElimination
+
+data = pd.read_csv("heart.csv")
+
+model = BayesianNetwork([
+    ('Age', 'HeartDisease'), 
+    ('Gender', 'HeartDisease'),
+    ('ChestPainType','HeartDisease'), 
+    ('ExerciseInducedAngina','HeartDisease'),
+    ('HeartDisease','RestingECG'),
+    ('HeartDisease','Cholesterol')
+])
+
+
+model.fit(data, estimator=MaximumLikelihoodEstimator)
+cpd_HeartDisease = MaximumLikelihoodEstimator(model, data).estimate_cpd('HeartDisease')
+inference = VariableElimination(model)
+
+printable = inference.query(
+    variables=['HeartDisease'], 
+    evidence={'RestingECG': 1}
+    )
+print(printable)
+---------------------------------------------------------------------------------------------------
+import numpy as np
+import pandas as pd
+
+# Loads data
+data = pd.read_csv("play_tennis.csv")
+# Removes the column "Day" as it is not relevant to the model
+data.drop(["day"], axis=1, inplace=True)
+
+def naive_bayes_predict(data, target_name, test_instance):
+    valueCounts = data[target_name].value_counts().to_dict()
+    pvalue = (data[data.columns[data.shape[1] - 1]].value_counts()/data.shape[0]).to_dict()    
+    pred = {}
+    for target, _ in valueCounts.items():
+        attribute = 1
+        subset = data[data[target_name] == target]
+        for attr, value in test_instance.items():
+            condProb = subset[subset[attr] == value].shape[0] / subset.shape[0]
+            attribute =attribute* condProb
+        prob = pvalue[target] * attribute       
+        pred[target] = prob
         
-        tree = {best_feature: {}}
-        features = [i for i in features if i != best_feature]
-        
-        for value in np.unique(data[best_feature]):
-            sub_data = data.where(data[best_feature] == value).dropna()
-            subtree = ID3(sub_data, original_data, features, target_attribute_name, parent_node_class)
-            tree[best_feature][value] = subtree
-        
-        return tree
+    return pred
 
-# Step 4: Load the dataset
-data = {
-    'Price': ['Low', 'Low', 'Low', 'Low', 'Low', 'Med', 'Med', 'Med', 'Med', 'High', 'High', 'High', 'High'],
-    'Maintenance': ['Low', 'Med', 'Low', 'Med', 'High', 'Med', 'Med', 'High', 'High', 'Med', 'Med', 'High', 'High'],
-    'Capacity': [2, 4, 4, 4, 4, 4, 4, 2, 5, 4, 2, 2, 5],
-    'Airbag': ['No', 'Yes', 'No', 'No', 'No', 'No', 'Yes', 'Yes', 'No', 'Yes', 'Yes', 'Yes', 'Yes'],
-    'Profitable': ['Yes', 'Yes', 'Yes', 'No', 'No', 'No', 'Yes', 'No', 'Yes', 'Yes', 'Yes', 'No', 'Yes']
-}
+    # Creates a test instance
+test_instance = {"outlook": "Sunny", 
+                 "temp": "Cool",
+                 "humidity": "High",
+                 "wind": "Strong"}
+# Performs prediction
+prediction = naive_bayes_predict(data.copy(), data.columns[data.shape[1] - 1], test_instance)
+print("Prediction is:",prediction)
+------------------------------------------------------------------------------------------
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-df = pd.DataFrame(data)
+class NeuralNetwork:
+    def __init__(self, ips, hds, ops):
+        np.random.seed(42)
+        self.wi = np.random.rand(ips, hds)
+        self.wh = np.random.rand(hds, ops)
+        self.bh = np.random.rand(hds)
+        self.bo = np.random.rand(ops)
 
-# Step 5: Run the ID3 algorithm
-features = list(df.columns[:-1])
-tree = ID3(df, df, features)
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
 
-import pprint
-pprint.pprint(tree)
---------------------------------------------------------------------------------------------------------
-import pandas as pd 
-import numpy as np 
-import matplotlib.pyplot as plt 
-from sklearn.cluster import KMeans, AgglomerativeClustering 
-from sklearn.metrics import adjusted_rand_score 
+    def sigmoid_derivative(self, x):
+        return x * (1 - x)
 
-# Load the dataset
-data = pd.read_csv("/content/sample_data/Spiral.txt", delimiter="\t") 
+    def forward_propagation(self, inputs):
+        self.hip = np.dot(inputs, self.wi) + self.bh
+        self.hop = self.sigmoid(self.hip)        
+        self.fip = np.dot(self.hop, self.wh) + self.bo
+        self.fop = self.sigmoid(self.fip)        
+        return self.hop, self.fop
 
-# Visualize the dataset
-plt.figure(figsize=(8, 6)) 
-plt.scatter(data['f1'], data['f2'], c=data['label'], cmap='viridis', marker='o') 
-plt.title('Dataset Visualization') 
-plt.xlabel('f1') 
-plt.ylabel('f2') 
-plt.show() 
+    def backpropagation(self, inputs, hop, fop, expop, lRate):
+        operr = expop - fop
+        opdel = operr * self.sigmoid_derivative(fop)        
+        hderr = opdel.dot(self.wh.T)
+        hddel = hderr * self.sigmoid_derivative(hop)        
+        self.wh += hop.T.dot(opdel) * lRate
+        self.wi += inputs.T.dot(hddel) * lRate
+        self.bo += np.sum(opdel, axis=0) * lRate        
+        self.bh += np.sum(hddel, axis=0) * lRate
 
-# Extract features
-X = data[['f1', 'f2']].values 
+    def train(self, inputs, expop, lRate, epochs):
+        for epoch in range(epochs):
+            hop, fop = self.forward_propagation(inputs)
+            self.backpropagation(inputs, hop, fop, expop, lRate)
 
-# Apply K-means clustering
-kmeans = KMeans(n_clusters=3, random_state=42) 
-kmeans_labels = kmeans.fit_predict(X) 
+    def predict(self, inputs):
+        _, fop = self.forward_propagation(inputs)
+        return fop
 
-# Apply Single-link Hierarchical Clustering
-single_link = AgglomerativeClustering(n_clusters=3, linkage='single') 
-single_link_labels = single_link.fit_predict(X) 
+    def accuracy(self, predictions, labels):
+        pred_labels = np.argmax(predictions, axis=1)
+        true_labels = np.argmax(labels, axis=1)
+        return np.mean(pred_labels == true_labels)
 
-# Apply Complete-link Hierarchical Clustering
-complete_link = AgglomerativeClustering(n_clusters=3, linkage='complete') 
-complete_link_labels = complete_link.fit_predict(X) 
+# Load and preprocess the Iris dataset
+iris = load_iris()
+X = iris.data
+y = iris.target.reshape(-1, 1)
 
-# Calculate Rand Index for each method
-true_labels = data['label'].values 
-rand_index_kmeans = adjusted_rand_score(true_labels, kmeans_labels) 
-rand_index_single = adjusted_rand_score(true_labels, single_link_labels) 
-rand_index_complete = adjusted_rand_score(true_labels, complete_link_labels) 
+encoder = OneHotEncoder(sparse_output=False)
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+y = encoder.fit_transform(y)
 
-print(f'Rand Index for K-means Clustering: {rand_index_kmeans:.4f}') 
-print(f'Rand Index for Single-link Hierarchical Clustering: {rand_index_single:.4f}') 
-print(f'Rand Index for Complete-link Hierarchical Clustering: {rand_index_complete:.4f}') 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Visualize the clustering results
+# Initialize and train the network
+nn = NeuralNetwork(ips=4, hds=5, ops=3)
+nn.train(X_train, y_train, lRate=0.1, epochs=10000)
 
-# K-means Clustering Results
-plt.figure(figsize=(8, 6)) 
-plt.scatter(X[:, 0], X[:, 1], c=kmeans_labels, cmap='viridis', marker='o') 
-plt.title('K-means Clustering') 
-plt.xlabel('f1') 
-plt.ylabel('f2') 
-plt.show() 
-
-# Single-link Hierarchical Clustering Results
-plt.figure(figsize=(8, 6)) 
-plt.scatter(X[:, 0], X[:, 1], c=single_link_labels, cmap='viridis', marker='o') 
-plt.title('Single-link Hierarchical Clustering') 
-plt.xlabel('f1') 
-plt.ylabel('f2') 
-plt.show() 
-
-# Complete-link Hierarchical Clustering Results
-plt.figure(figsize=(8, 6)) 
-plt.scatter(X[:, 0], X[:, 1], c=complete_link_labels, cmap='viridis', marker='o') 
-plt.title('Complete-link Hierarchical Clustering') 
-plt.xlabel('f1') 
-plt.ylabel('f2') 
-plt.show() 
-
+# Test the network
+test_results = nn.predict(X_test)
+print("Test Accuracy:", nn.accuracy(test_results, y_test))
